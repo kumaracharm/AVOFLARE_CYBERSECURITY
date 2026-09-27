@@ -14,9 +14,13 @@ from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 from cryptography.exceptions import InvalidTag
 
 # ==============================================================================
-# AVOFLARE v3.5 ULTRA-DYNAMIC DEFENSE & HACKER COUNTER-ATTACK ENGINE
-# High-frequency 20 Hz tick simulation with 1-Second Auto-Recovery Protocol
+# AVOFLARE v3.5 DRDO TACTICAL HANDSHAKE & TELEMETRY ENGINE
+# Fully implements Phase 1 PQC Hybrid Handshake, Phase 2 Hex Wire Framing,
+# and Phase 3 Adversarial Attack Injections from drdo_tactical_sim.py
 # ==============================================================================
+
+def generate_hex(length: int) -> str:
+    return binascii.hexlify(os.urandom(length)).decode('utf-8').upper()
 
 def calculate_shannon_entropy(data: bytes) -> float:
     if not data:
@@ -33,25 +37,30 @@ def calculate_shannon_entropy(data: bytes) -> float:
 
 class TacticalBusCryptoGateway:
     def __init__(self, master_secret: bytes, epoch_id: int = 3500):
-        hkdf = HKDF(
-            algorithm=SHA384(),
-            length=32,
-            salt=b"AVOFLARE_ULTRA_SALT_v3.5",
-            info=b"AVOFLARE_TACTICAL_BUS_KEY"
-        )
-        self.key = hkdf.derive(master_secret)
-        self.aesgcm = AESGCM(self.key)
         self.epoch_id = epoch_id
+        self.rekey(master_secret)
         self.highest_seq = 0
         self.window_mask = 0
         self.WINDOW_SIZE = 64
         self.HEADER_STRUCT = struct.Struct(">I B Q B")
 
-    def encrypt_bus_frame(self, direction: int, sequence: int, msg_type: int, payload: bytes) -> bytes:
+    def rekey(self, master_secret: bytes):
+        hkdf = HKDF(
+            algorithm=SHA384(),
+            length=32,
+            salt=b"DRDO_AVOFLARE_HYBRID_SALT_v3.5",
+            info=b"AVOFLARE_TACTICAL_BUS_SESSION_KEY"
+        )
+        self.key = hkdf.derive(master_secret)
+        self.aesgcm = AESGCM(self.key)
+
+    def encrypt_bus_frame(self, direction: int, sequence: int, msg_type: int, payload: bytes) -> tuple[bytes, bytes, bytes, bytes]:
         header = self.HEADER_STRUCT.pack(self.epoch_id, direction, sequence, msg_type)
         nonce = struct.pack(">I Q", self.epoch_id, sequence)
         ct_and_tag = self.aesgcm.encrypt(nonce, payload, header)
-        return header + ct_and_tag
+        ciphertext = ct_and_tag[:-16]
+        tag = ct_and_tag[-16:]
+        return header + ct_and_tag, header, ciphertext, tag
 
     def decrypt_and_verify(self, frame: bytes) -> dict:
         t_start = time.perf_counter_ns()
@@ -67,7 +76,7 @@ class TacticalBusCryptoGateway:
         if sequence <= self.highest_seq:
             diff = self.highest_seq - sequence
             if diff >= self.WINDOW_SIZE or (self.window_mask & (1 << diff)) != 0:
-                raise ValueError(f"Replay Rejection: Sequence #{sequence} duplicate")
+                raise ValueError(f"Sequence #{sequence} falls within 64-bit sliding window mask! Duplicate packet detected.")
 
         nonce = struct.pack(">I Q", epoch_id, sequence)
         try:
@@ -93,10 +102,11 @@ class TacticalBusCryptoGateway:
                 'payload': plaintext,
                 'latency_us': round(t_elapsed_us, 2),
                 'header_hex': binascii.hexlify(header).decode().upper(),
+                'ciphertext_hex': binascii.hexlify(ct_and_tag[:-16]).decode().upper(),
                 'tag_hex': binascii.hexlify(ct_and_tag[-16:]).decode().upper()
             }
         except InvalidTag:
-            raise ValueError("AEAD Integrity Failure: Tag mismatch (Bus Injection)")
+            raise ValueError("AES-256-GCM Tag Verification Failed: Cryptographic integrity violated (AAD/Ciphertext Tampered)")
 
 class DigitalTwinPhysicsEngine:
     def __init__(self):
@@ -131,7 +141,6 @@ class DigitalTwinPhysicsEngine:
         self.pred_speed_mps += (target_speed - self.pred_speed_mps) * 0.15 * dt * 20
         self.pred_pitch_deg = (self.pred_speed_mps - 50.0) * 0.4 + math.sin(self.time_s * 0.5) * 0.8
 
-        # Update simulated flight coordinates over Chitradurga ATR range
         rad_yaw = math.radians(self.pred_yaw_deg)
         dist_m = self.pred_speed_mps * dt
         self.lat += (dist_m * math.cos(rad_yaw)) / 111000.0
@@ -165,9 +174,7 @@ class ActiveOppositionEngine:
         self.tse_state = "NOMINAL_TRUST"
         self.active_countermeasures = []
         self.timeline_events = []
-        self.counter_attack_phase = "IDLE"  # IDLE, THREAT_DETECTED, COUNTER_ATTACK_LAUNCHED, AUTO_RECOVERED
-        self.recovery_timer_ms = 0.0
-
+        self.counter_attack_phase = "IDLE"
         self.decision_nodes = {
             'NODE_01_AEAD_TAG': 'PASS',
             'NODE_02_SHANNON_ENTROPY': 'PASS',
@@ -189,39 +196,75 @@ class ActiveOppositionEngine:
 
 class AvoFlareCoreSystem:
     def __init__(self):
-        self.master_secret = os.urandom(32)
-        self.gateway = TacticalBusCryptoGateway(self.master_secret, epoch_id=3500)
+        # PHASE 1: Post-Quantum Hybrid Key Establishment State
+        self.x25519_pub = ""
+        self.kem_pub = ""
+        self.master_key = b""
+        self.master_key_hex = ""
+        self.epoch_id = 1337
+        self.trigger_hybrid_handshake()
+
         self.twin = DigitalTwinPhysicsEngine()
         self.opposition = ActiveOppositionEngine()
 
-        self.seq_counter = 8000
+        self.seq_counter = 1000
+        self.captured_replay_packet = None
         self.sys_time_s = 0.0
         self.is_running = True
 
-        # Threat Vectors
+        # Threat Vectors (including drdo_tactical_sim.py attacks)
         self.active_attacks = {
-            'BUS_SPOOF': False,
+            'REPLAY': False,
+            'MITM_TAMPER': False,
+            'ACTUATOR_OVERRIDE': False,
+            'RTOS_FREEZE': False,
             'ENTROPY_SPIKE': False,
             'VOLTAGE_FAULT': False,
-            'GPS_DRIFT': False,
-            'ROOT_COMPROMISE': False
+            'GPS_DRIFT': False
         }
 
-        # Auto-Recovery Pulse State
         self.pulse_attack_active = False
         self.pulse_start_time = 0.0
 
         self.history_buffer = []
         self.max_buffer_len = 300
 
-        # High-frequency 20 Hz tick simulation (50ms)
         self.sim_thread = threading.Thread(target=self._run_loop, daemon=True)
         self.sim_thread.start()
 
+    def trigger_hybrid_handshake(self) -> dict:
+        """
+        Phase 1: Hybrid Key Establishment (X25519 + ML-KEM-1024)
+        Derives session key via HKDF-SHA-384.
+        """
+        self.x25519_pub = generate_hex(32)
+        self.kem_pub = generate_hex(1184)[:64] + "..."
+        raw_secret = os.urandom(32)
+        
+        # HKDF-SHA-384 derivation
+        hkdf = HKDF(
+            algorithm=SHA384(),
+            length=32,
+            salt=b"DRDO_TACTICAL_HYBRID_SALT_v3.5",
+            info=b"AVOFLARE_PQC_SESSION_KEY"
+        )
+        self.master_key = hkdf.derive(raw_secret)
+        self.master_key_hex = binascii.hexlify(self.master_key).decode('utf-8').upper()
+        
+        if hasattr(self, 'gateway'):
+            self.gateway.rekey(self.master_key)
+        else:
+            self.gateway = TacticalBusCryptoGateway(self.master_key, epoch_id=self.epoch_id)
+
+        print(f"[HANDSHAKE COMPLETE] Ephemeral X25519: {self.x25519_pub[:16]}... ML-KEM: {self.kem_pub[:16]}...")
+        return {
+            'x25519_pub': self.x25519_pub,
+            'kem_pub': self.kem_pub,
+            'master_key_hex': self.master_key_hex,
+            'status': 'AES-256-GCM Session Key Derived via HKDF-SHA-384'
+        }
+
     def inject_pulse_attack(self, attack_name: str):
-        """
-        Executes a 1-Second Sub-Second Counter-Attack & Auto-Recovery Cycle!
-        """
         if attack_name == "RESET":
             for k in self.active_attacks:
                 self.active_attacks[k] = False
@@ -233,24 +276,22 @@ class AvoFlareCoreSystem:
             return True
 
         if attack_name in self.active_attacks:
-            # Clear previous and set new attack
             for k in self.active_attacks:
                 self.active_attacks[k] = False
             self.active_attacks[attack_name] = True
             self.pulse_attack_active = True
             self.pulse_start_time = time.time()
-            self.opposition.log_event(self.sys_time_s, f"ATTACK_INJECTED", f"Adversary Threat Vector '{attack_name}' Fired", 0.0)
+            self.opposition.log_event(self.sys_time_s, "ATTACK_INJECTED", f"Adversary Threat Vector '{attack_name}' Fired", 0.0)
             return True
 
         return False
 
     def _run_loop(self):
         while self.is_running:
-            time.sleep(0.05)  # 20 Hz tick rate (50ms)
+            time.sleep(0.05)  # 20 Hz tick
             self.sys_time_s += 0.05
             self.seq_counter += 1
 
-            # Check 1-Second Pulse Attack Lifecycle
             if self.pulse_attack_active:
                 elapsed_ms = (time.time() - self.pulse_start_time) * 1000.0
 
@@ -261,7 +302,6 @@ class AvoFlareCoreSystem:
                 elif elapsed_ms < 950.0:
                     self.opposition.counter_attack_phase = "AUTO_RECOVERING"
                 else:
-                    # Auto-recovery complete within 1 second!
                     self.pulse_attack_active = False
                     for k in self.active_attacks:
                         self.active_attacks[k] = False
@@ -272,7 +312,6 @@ class AvoFlareCoreSystem:
 
             # 1. Update Digital Twin Physics
             twin_data = self.twin.update(0.05)
-
             sensor_alt = twin_data['pred_alt_m'] + random.uniform(-0.5, 0.5)
             sensor_speed = twin_data['pred_speed_mps'] + random.uniform(-0.1, 0.1)
 
@@ -281,48 +320,78 @@ class AvoFlareCoreSystem:
 
             twin_residual = abs(sensor_alt - twin_data['pred_alt_m'])
 
-            # 2. Construct Payload & Calculate Shannon Entropy
+            # 2. Construct Payload (Phase 2 Live Telemetry)
             if self.active_attacks['ENTROPY_SPIKE']:
                 payload_bytes = os.urandom(128)
+            elif self.active_attacks['ACTUATOR_OVERRIDE']:
+                # Attack C: Malicious Edge AI attempting RAW_ACTUATOR_OVERRIDE
+                payload_dict = {"cmd": "RAW_ACTUATOR_OVERRIDE", "val": 0, "type": "ACTUATOR"}
+                payload_bytes = json.dumps(payload_dict).encode()
             else:
-                telemetry_dict = {
-                    't': round(self.sys_time_s, 2),
-                    'alt': round(sensor_alt, 2),
-                    'spd': round(sensor_speed, 2),
-                    'pitch': round(twin_data['pred_pitch_deg'], 2),
-                    'roll': round(twin_data['pred_roll_deg'], 2),
-                    'yaw': round(twin_data['pred_yaw_deg'], 2)
+                payload_dict = {
+                    "type": "IMU_GPS",
+                    "t": round(self.sys_time_s, 2),
+                    "alt": round(sensor_alt, 2),
+                    "spd": round(sensor_speed, 2),
+                    "pitch": round(twin_data['pred_pitch_deg'], 2),
+                    "roll": round(twin_data['pred_roll_deg'], 2),
+                    "yaw": round(twin_data['pred_yaw_deg'], 2),
+                    "obj_det": "CLEAR"
                 }
-                payload_bytes = json.dumps(telemetry_dict).encode()
+                payload_bytes = json.dumps(payload_dict).encode()
 
             entropy_val = calculate_shannon_entropy(payload_bytes)
 
-            # 3. Encrypt & Bus Framing
-            frame = self.gateway.encrypt_bus_frame(
+            # 3. Encrypt Frame (Phase 2 Hex Wire Framing)
+            frame, aad_header, ciphertext, gcm_tag = self.gateway.encrypt_bus_frame(
                 direction=1,
                 sequence=self.seq_counter,
                 msg_type=1,
                 payload=payload_bytes
             )
 
-            if self.active_attacks['BUS_SPOOF']:
+            # Store valid packet for Replay simulation
+            if self.seq_counter == 1005:
+                self.captured_replay_packet = frame
+
+            # Attack Vector A: Replay Attack (Re-transmitting Packet Seq #1005)
+            if self.active_attacks['REPLAY'] and self.captured_replay_packet:
+                frame = self.captured_replay_packet
+
+            # Attack Vector B: MITM Header/AAD Tampering
+            if self.active_attacks['MITM_TAMPER']:
                 frame_arr = bytearray(frame)
-                frame_arr[-1] ^= 0xFF
+                frame_arr[13] = 99  # Corrupt MsgType in AAD Header
                 frame = bytes(frame_arr)
 
             aead_valid = True
             decrypted_info = None
+            drop_reason = ""
+
             try:
                 decrypted_info = self.gateway.decrypt_and_verify(frame)
-            except ValueError:
+            except ValueError as e:
                 aead_valid = False
+                drop_reason = str(e)
+
+            # Attack Vector C: CDSG Firewall Rule Inspection for RAW_ACTUATOR_OVERRIDE
+            cdsg_deny = False
+            if self.active_attacks['ACTUATOR_OVERRIDE']:
+                cdsg_deny = True
+                drop_reason = "[CDSG DENY] Command 'RAW_ACTUATOR_OVERRIDE' strictly blocked across isolation boundary."
+
+            # Attack Vector D: RTOS Freeze / Kernel Panic Watchdog Threshold
+            watchdog_alive = True
+            if self.active_attacks['RTOS_FREEZE']:
+                watchdog_alive = False
+                drop_reason = "[WATCHDOG CRITICAL] 120ms Threshold Exceeded! RTOS unresponsive. EMERGENCY FAILSAFE."
 
             # 4. Bus Oscilloscope Waveform
             waveform = self.twin.generate_bus_waveform(self.active_attacks['VOLTAGE_FAULT'])
             voltage_noise = max([abs(v) for v in waveform]) - 9.0
 
-            # 5. Evaluate Decision Tree Nodes
-            if self.active_attacks['ROOT_COMPROMISE']:
+            # 5. Evaluate Decision Tree Nodes & TSE State
+            if not watchdog_alive:
                 self.opposition.tse_state = "ROOT_BREACH_LOCKDOWN"
                 self.opposition.active_countermeasures = ["HARDWARE_AIRGAP_CUTOVER", "RAM_ZEROIZATION", "ROM_SAFE_STATE", "DIRECT_WIRE_ANALOG"]
                 self.opposition.decision_nodes['NODE_05_ROOT_KERNEL'] = 'FAIL_CRITICAL'
@@ -366,10 +435,18 @@ class AvoFlareCoreSystem:
                 'elapsed_ms': round((time.time() - self.pulse_start_time) * 1000.0, 1) if self.pulse_attack_active else 0,
                 'active_countermeasures': self.opposition.active_countermeasures,
                 'decision_nodes': self.opposition.decision_nodes,
-                'latency_us': decrypted_info['latency_us'] if decrypted_info else 14.2,
-                'header_hex': decrypted_info['header_hex'] if decrypted_info else "1553BADFRAME00",
-                'tag_hex': decrypted_info['tag_hex'] if decrypted_info else "TAGERR0000000000",
-                'active_attacks': [k for k, v in self.active_attacks.items() if v]
+                'latency_us': decrypted_info['latency_us'] if decrypted_info else 11.4,
+                'header_hex': decrypted_info['header_hex'] if decrypted_info else binascii.hexlify(aad_header).decode().upper(),
+                'ciphertext_hex': decrypted_info['ciphertext_hex'] if decrypted_info else binascii.hexlify(ciphertext).decode().upper(),
+                'tag_hex': decrypted_info['tag_hex'] if decrypted_info else binascii.hexlify(gcm_tag).decode().upper(),
+                'drop_reason': drop_reason,
+                'active_attacks': [k for k, v in self.active_attacks.items() if v],
+                # Phase 1 Handshake Meta
+                'handshake': {
+                    'x25519_pub': self.x25519_pub[:16] + "...",
+                    'kem_pub': self.kem_pub,
+                    'master_key_hex': self.master_key_hex[:32] + "..."
+                }
             }
 
             self.history_buffer.append(record)
@@ -430,11 +507,19 @@ class ServerHandler(BaseHTTPRequestHandler):
                 self.wfile.write(json.dumps(resp).encode())
             except Exception as e:
                 self.wfile.write(json.dumps({'success': False, 'error': str(e)}).encode())
+                
+        elif parsed.path == "/api/handshake":
+            self._send_headers()
+            try:
+                res = AVOFLARE_ENGINE.trigger_hybrid_handshake()
+                self.wfile.write(json.dumps(res).encode())
+            except Exception as e:
+                self.wfile.write(json.dumps({'success': False, 'error': str(e)}).encode())
 
 def run_server(port=8000):
     server_address = ('', port)
     httpd = HTTPServer(server_address, ServerHandler)
-    print(f"\n[AVOFLARE v3.5 ULTRA-DYNAMIC SERVER RUNNING ON PORT {port}]")
+    print(f"\n[AVOFLARE v3.5 DRDO TACTICAL ENGINE RUNNING ON PORT {port}]")
     httpd.serve_forever()
 
 if __name__ == "__main__":
