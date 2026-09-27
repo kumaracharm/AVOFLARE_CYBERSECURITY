@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AVOFLARE v3.5 — ADVERSARY HACKER CONSOLE & TACTICAL DEFENSE OPERATOR</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Consolas:wght@400;700&family=JetBrains+Mono:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-main: #07090e;
+  --panel-def: #0f1420;
+  --border-def: #1c2638;
+  --header-def: #141c2c;
+  
+  --gn: #00ff88;
+  --gn-glow: rgba(0, 255, 136, 0.2);
+  --ye: #ffaa00;
+  --ye-glow: rgba(255, 170, 0, 0.2);
+  --rd: #ff2255;
+  --rd-glow: rgba(255, 34, 85, 0.3);
+  --cy: #00e5ff;
+  
+  --txt-wh: #f0f4f8;
+  --txt-muted: #8a99ad;
+  
+  /* HACKER CONSOLE SPECIFIC VARS */
+  --bg-hack: #0a0406;
+  --panel-hack: #16080c;
+  --border-hack: #2e0d14;
+  --header-hack: #240b10;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg-main);
+  color: var(--txt-wh);
+  font-family: 'JetBrains Mono', 'Consolas', monospace;
+  font-size: 12px;
+  line-height: 1.4;
+  overflow-x: hidden;
+}
+
+/* TOP STATUS STRIP */
+.topbar {
+  background: #040609;
+  border-bottom: 2px solid #1a2333;
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.brand-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--txt-wh);
+  letter-spacing: 0.12em;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.brand-badge {
+  background: rgba(0, 255, 136, 0.1);
+  color: var(--gn);
+  border: 1px solid var(--gn);
+  padding: 2px 8px;
+  font-size: 10px;
+}
+
+/* SYSTEM STATUS GAUGE */
+.state-pill {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 5px 14px;
+  border-radius: 2px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border: 1px solid transparent;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.pill-nominal { background: var(--gn-glow); color: var(--gn); border-color: var(--gn); box-shadow: 0 0 12px var(--gn-glow); }
+.pill-counter { background: var(--rd-glow); color: var(--rd); border-color: var(--rd); box-shadow: 0 0 15px var(--rd-glow); animation: pulseRed 0.6s infinite alternate; }
+.pill-lockdown { background: rgba(255, 34, 85, 0.4); color: #fff; border-color: var(--rd); animation: pulseRed 0.3s infinite alternate; }
+
+@keyframes pulseRed { from { opacity: 0.6; } to { opacity: 1; } }
+
+/* MAIN SPLIT-SCREEN LAYOUT */
+.main-wrapper {
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: 12px;
+  padding: 12px;
+}
+@media (max-width: 1200px) {
+  .main-wrapper { grid-template-columns: 1fr; }
+}
+
+/* ==============================================================================
+   LEFT SIDE: RED-TEAM BLACK HAT HACKER CONSOLE
+   ============================================================================== */
+.hacker-panel {
+  background: var(--panel-hack);
+  border: 1px solid var(--border-hack);
+  border-radius: 3px;
+  margin-bottom: 12px;
+  box-shadow: 0 0 20px rgba(255, 34, 85, 0.05);
+}
+.hacker-head {
+  background: var(--header-hack);
+  border-bottom: 1px solid var(--border-hack);
+  padding: 8px 12px;
+  font-weight: 800;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: var(--rd);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.hack-btn {
+  width: 100%;
+  background: #1c090e;
+  border: 1px solid #3d121b;
+  color: #ff99aa;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: all 0.15s ease;
+  border-radius: 2px;
+}
+.hack-btn:hover {
+  background: var(--rd-glow);
+  border-color: var(--rd);
+  color: #fff;
+  box-shadow: 0 0 12px var(--rd-glow);
+}
+.hack-btn.active {
+  background: var(--rd);
+  color: #000;
+  border-color: #fff;
+  box-shadow: 0 0 15px var(--rd);
+}
+.hack-tag {
+  font-size: 9px;
+  background: rgba(0,0,0,0.4);
+  padding: 2px 6px;
+  border-radius: 2px;
+  border: 1px solid rgba(255,34,85,0.3);
+}
+
+.hack-reset-btn {
+  width: 100%;
+  background: rgba(0, 255, 136, 0.1);
+  border: 1px solid var(--gn);
+  color: var(--gn);
+  padding: 10px;
+  font-family: inherit;
+  font-weight: 800;
+  font-size: 11px;
+  cursor: pointer;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-top: 4px;
+}
+.hack-reset-btn:hover {
+  background: var(--gn);
+  color: #000;
+}
+
+/* HACKER RADAR SCOPE */
+.radar-box {
+  width: 100%;
+  height: 180px;
+  background: #070204;
+  border: 1px solid var(--border-hack);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+canvas.radar-canvas {
+  width: 100%;
+  height: 100%;
+}
+
+/* MATRIX TERMINAL LOG */
+.terminal-box {
+  background: #050203;
+  border: 1px solid var(--border-hack);
+  padding: 8px;
+  height: 140px;
+  overflow-y: auto;
+  font-size: 10px;
+  color: #ff6688;
+}
+.term-line { margin-bottom: 3px; }
+
+/* ==============================================================================
+   RIGHT SIDE: BLUE-TEAM DEFENSE COMMAND C4I OPERATOR
+   ============================================================================== */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 12px;
+}
+@media (max-width: 900px) { .metrics-grid { grid-template-columns: repeat(2, 1fr); } }
+
+.m-card {
+  background: var(--panel-def);
+  border: 1px solid var(--border-def);
+  padding: 10px 12px;
+}
+.m-title { font-size: 9px; color: var(--txt-muted); letter-spacing: 0.1em; text-transform: uppercase; }
+.m-val { font-size: 20px; font-weight: 800; color: var(--txt-wh); margin-top: 2px; }
+.m-sub { font-size: 10px; color: var(--gn); margin-top: 2px; }
+
+/* 1-SECOND COUNTER-ATTACK TIMELINE BAR */
+.recovery-bar-box {
+  background: var(--panel-def);
+  border: 1px solid var(--border-def);
+  padding: 10px 14px;
+  margin-bottom: 12px;
+}
+.rec-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 11px;
+  font-weight: 700;
+}
+.progress-track {
+  width: 100%;
+  height: 12px;
+  background: #080d16;
+  border: 1px solid var(--border-def);
+  border-radius: 2px;
+  overflow: hidden;
+  position: relative;
+}
+.progress-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--ye), var(--rd), var(--gn));
+  transition: width 0.05s linear;
+}
+
+/* WAVEFORM CANVAS CARDS */
+.def-panel {
+  background: var(--panel-def);
+  border: 1px solid var(--border-def);
+  border-radius: 3px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+.def-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+canvas.def-canvas {
+  width: 100%;
+  height: 140px;
+  background: #06090f;
+  border: 1px solid #141c2b;
+  display: block;
+}
+
+/* DECISION MATRIX NODES */
+.node-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+@media (max-width: 1000px) { .node-grid { grid-template-columns: repeat(2, 1fr); } }
+
+.node-box {
+  background: #0b101a;
+  border: 1px solid var(--border-def);
+  padding: 8px;
+  font-size: 10px;
+  text-align: center;
+}
+.n-pass { border-top: 3px solid var(--gn); color: var(--txt-wh); }
+.n-fail { border-top: 3px solid var(--rd); color: var(--rd); background: rgba(255, 34, 85, 0.1); }
+
+/* COMBAT INSPECTION LOG WATERFALL */
+table.waterfall-tbl {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 10px;
+}
+th {
+  background: var(--header-def);
+  color: var(--txt-muted);
+  padding: 8px 10px;
+  text-align: left;
+  border-bottom: 1px solid var(--border-def);
+}
+td {
+  padding: 6px 10px;
+  border-bottom: 1px solid #121a28;
+}
+</style>
+</head>
+<body>
+
+<!-- TOP STATUS BAR -->
+<div class="topbar">
+  <div class="brand-title">
+    <span>AVOFLARE v3.5 // DRDO C4I TACTICAL OPERATOR</span>
+    <span class="brand-badge">MIL-STD-1553B ACTIVE</span>
+  </div>
+  <div style="display: flex; align-items: center; gap: 16px;">
+    <div>MISSION TIME: <span id="clockVal" style="color: var(--cy); font-weight:700;">00:00.0s</span></div>
+    <div id="tsePill" class="state-pill pill-nominal">
+      <span id="tseDot">●</span> <span id="tseText">NOMINAL_TRUST</span>
+    </div>
+  </div>
+</div>
+
+<div class="main-wrapper">
+
+  <!-- =========================================================================
+       LEFT SIDE: RED-TEAM BLACK HAT ADVERSARY HACKER CONSOLE
+       ========================================================================= -->
+  <div>
+    <div class="hacker-panel">
+      <div class="hacker-head">
+        <span>🎯 ADVERSARY HACKER CONSOLE</span>
+        <span style="color: var(--rd); font-size: 9px;">RED TEAM INJECTOR</span>
+      </div>
+
+      <div style="padding: 10px;">
+        <p style="color: var(--txt-muted); font-size: 10px; margin-bottom: 10px;">
+          Fire rapid pulse attacks to observe the <strong>&lt;1 Second Counter-Attack & Auto-Recovery Protocol</strong>.
+        </p>
+
+        <button class="hack-btn" id="btn-BUS_SPOOF" onclick="triggerPulseAttack('BUS_SPOOF')">
+          <span>🎯 1. MIL-STD-1553 BUS SPOOF</span>
+          <span class="hack-tag">CORRUPT AEAD</span>
+        </button>
+
+        <button class="hack-btn" id="btn-ENTROPY_SPIKE" onclick="triggerPulseAttack('ENTROPY_SPIKE')">
+          <span>⚡ 2. SHANNON ENTROPY FLOOD</span>
+          <span class="hack-tag">8.0 BITS/BYTE</span>
+        </button>
+
+        <button class="hack-btn" id="btn-VOLTAGE_FAULT" onclick="triggerPulseAttack('VOLTAGE_FAULT')">
+          <span>🔌 3. VOLTAGE FAULT INJECTION</span>
+          <span class="hack-tag">&plusmn;5.0V TAP</span>
+        </button>
+
+        <button class="hack-btn" id="btn-GPS_DRIFT" onclick="triggerPulseAttack('GPS_DRIFT')">
+          <span>🛰️ 4. CORRELATED GPS DRIFT</span>
+          <span class="hack-tag">+210M DRIFT</span>
+        </button>
+
+        <button class="hack-btn" id="btn-ROOT_COMPROMISE" onclick="triggerPulseAttack('ROOT_COMPROMISE')">
+          <span>💀 5. ROOT KERNEL SUBVERSION</span>
+          <span class="hack-tag">AIRGAP FUSE</span>
+        </button>
+
+        <button class="hack-reset-btn" onclick="triggerPulseAttack('RESET')">✓ RECOVER SYSTEM (RESET ALL)</button>
+      </div>
+    </div>
+
+    <!-- HACKER RADAR SCOPE -->
+    <div class="hacker-panel">
+      <div class="hacker-head">
+        <span>📡 TARGET LOCK RADAR (TAPAS MALE UAV)</span>
+        <span id="targetCoord" style="color: var(--rd);">LAT 14.2250 N</span>
+      </div>
+      <div class="radar-box">
+        <canvas id="radarCanvas" class="radar-canvas"></canvas>
+      </div>
+    </div>
+
+    <!-- MATRIX EXPLOIT TERMINAL -->
+    <div class="hacker-panel">
+      <div class="hacker-head">
+        <span>💻 EXPLOIT PAYLOAD TERMINAL</span>
+        <span style="color: var(--txt-muted);">STREAM LOG</span>
+      </div>
+      <div class="terminal-box" id="hackTerminal">
+        <div class="term-line">[SYS] Hacker Console initialized. Target locked: TAPAS-BH-201.</div>
+        <div class="term-line">[SYS] Listening on MIL-STD-1553 Differential Bus...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       RIGHT SIDE: BLUE-TEAM DEFENSE COMMAND C4I OPERATOR
+       ========================================================================= -->
+  <div>
+    <!-- METRICS GRID -->
+    <div class="metrics-grid">
+      <div class="m-card">
+        <div class="m-title">TAPAS SENSOR ALTITUDE</div>
+        <div class="m-val" id="valAlt">4,200 m</div>
+        <div class="m-sub">GNSS + Pitot Fused</div>
+      </div>
+      <div class="m-card">
+        <div class="m-title">JSBSim TWIN ALTITUDE</div>
+        <div class="m-val" id="valTwinAlt" style="color: var(--cy);">4,200 m</div>
+        <div class="m-sub">6-DOF Aerodynamic Oracle</div>
+      </div>
+      <div class="m-card">
+        <div class="m-title">SHANNON ENTROPY H(X)</div>
+        <div class="m-val" id="valEntropy" style="color: var(--ye);">4.21 b/b</div>
+        <div class="m-sub">Threshold: 6.8 b/b</div>
+      </div>
+      <div class="m-card">
+        <div class="m-title">SIGNAL VOLTAGE NOISE</div>
+        <div class="m-val" id="valNoise" style="color: var(--gn);">&plusmn;0.28 V</div>
+        <div class="m-sub">Nominal: 18V P-P</div>
+      </div>
+    </div>
+
+    <!-- 1-SECOND COUNTER-ATTACK RECOVERY TIMER BAR -->
+    <div class="recovery-bar-box">
+      <div class="rec-title-row">
+        <span>⚡ SUB-SECOND COUNTER-ATTACK & AUTO-RECOVERY PROTOCOL (&lt;1.0s TIMELINE)</span>
+        <span id="recPhaseText" style="color: var(--gn);">CLOSED-LOOP SAFE</span>
+      </div>
+      <div class="progress-track">
+        <div id="progressFill" class="progress-fill"></div>
+      </div>
+      <div style="display:flex; justify-content:space-between; margin-top:4px; font-size:9px; color:var(--txt-muted);">
+        <span>0ms INJECTED</span>
+        <span>150ms THREAT DETECTED</span>
+        <span>350ms COUNTER-ATTACK LAUNCHED</span>
+        <span>750ms TPM RE-VERIFIED</span>
+        <span>1000ms AUTO-RECOVERED</span>
+      </div>
+    </div>
+
+    <!-- WAVEFORM 1: MIL-STD-1553 DIFFERENTIAL VOLTAGE OSCILLOSCOPE -->
+    <div class="def-panel">
+      <div class="def-head">
+        <span style="color: var(--gn);">📊 WAVEFORM 1 — MIL-STD-1553 DIFFERENTIAL VOLTAGE OSCILLOSCOPE (18.0V P-P MANCHESTER II)</span>
+        <span id="voltStatus" style="color: var(--gn);">NOMINAL VOLTAGE MARGIN</span>
+      </div>
+      <canvas id="canvasVoltage" class="def-canvas"></canvas>
+    </div>
+
+    <!-- WAVEFORM 2: TAPAS ALTITUDE vs JSBSim DIGITAL TWIN -->
+    <div class="def-panel">
+      <div class="def-head">
+        <span style="color: var(--cy);">📈 WAVEFORM 2 — TAPAS FLIGHT ALTITUDE vs JSBSim 6-DOF DIGITAL TWIN ORACLE</span>
+        <span id="twinResidualStat" style="color: var(--txt-wh);">&Delta;Residual: 0.4m</span>
+      </div>
+      <canvas id="canvasAlt" class="def-canvas"></canvas>
+    </div>
+
+    <!-- DECISION MATRIX NODE GRID -->
+    <div class="def-head" style="margin-top: 14px;">
+      <span>🛡️ HEURISTIC DECISION-MATRIX STATE TREE EVALUATOR</span>
+    </div>
+    <div class="node-grid">
+      <div class="node-box n-pass" id="node-01"><div>NODE_01_AEAD</div><strong id="nd1-val">PASS</strong></div>
+      <div class="node-box n-pass" id="node-02"><div>NODE_02_ENTROPY</div><strong id="nd2-val">PASS</strong></div>
+      <div class="node-box n-pass" id="node-03"><div>NODE_03_SIGNAL</div><strong id="nd3-val">PASS</strong></div>
+      <div class="node-box n-pass" id="node-04"><div>NODE_04_RESIDUAL</div><strong id="nd4-val">PASS</strong></div>
+      <div class="node-box n-pass" id="node-05"><div>NODE_05_KERNEL</div><strong id="nd5-val">PASS</strong></div>
+    </div>
+
+    <!-- COMBAT WATERFALL LOG TABLE -->
+    <div class="def-panel">
+      <div class="def-head">
+        <span>📋 COMBAT WIRE FORMAT PACKET INSPECTION WATERFALL</span>
+        <span style="color: var(--txt-muted);">10 Hz LIVE INGRESS</span>
+      </div>
+      <table class="waterfall-tbl">
+        <thead>
+          <tr>
+            <th>TIME</th>
+            <th>SEQ #</th>
+            <th>AAD HEADER</th>
+            <th>GCM-SIV TAG</th>
+            <th>LATENCY</th>
+            <th>COUNTER-ATTACK PHASE</th>
+            <th>VERDICT</th>
+          </tr>
+        </thead>
+        <tbody id="waterfallBody">
+          <tr><td colspan="7" style="text-align: center; color: var(--txt-muted);">Connecting...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<script>
+let historyData = [];
+let activeAttacks = {};
+let radarAngle = 0;
+
+async function fetchTelemetry() {
+  try {
+    const res = await fetch('/api/telemetry');
+    const data = await res.json();
+    historyData = data.history || [];
+    activeAttacks = data.active_attacks || {};
+
+    updateUI(data.latest, data.timeline_events);
+    renderWaveforms(data.latest);
+  } catch (err) {
+    console.error("Telemetry Error:", err);
+  }
+}
+
+function updateUI(latest, timelineEvents) {
+  if (!latest || !latest.t) return;
+
+  document.getElementById('clockVal').innerText = latest.t.toFixed(1) + 's';
+  document.getElementById('valAlt').innerText = latest.sensor_alt.toLocaleString() + ' m';
+  document.getElementById('valTwinAlt').innerText = latest.twin_alt.toLocaleString() + ' m';
+  document.getElementById('valEntropy').innerText = latest.entropy.toFixed(2) + ' b/b';
+  document.getElementById('valNoise').innerText = '±' + Math.abs(latest.voltage_noise).toFixed(2) + ' V';
+  document.getElementById('targetCoord').innerText = `LAT ${latest.lat.toFixed(4)} N | LON ${latest.lon.toFixed(4)} E`;
+
+  // Update State Pill
+  const pill = document.getElementById('tsePill');
+  const txt = document.getElementById('tseText');
+  const state = latest.tse_state;
+  txt.innerText = state;
+  if (state === 'NOMINAL_TRUST') pill.className = 'state-pill pill-nominal';
+  else if (state === 'ACTIVE_COUNTER_ENGAGED') pill.className = 'state-pill pill-counter';
+  else pill.className = 'state-pill pill-lockdown';
+
+  // Hacker Buttons
+  for (let k in activeAttacks) {
+    const btn = document.getElementById('btn-' + k);
+    if (btn) {
+      if (activeAttacks[k]) btn.classList.add('active');
+      else btn.classList.remove('active');
+    }
+  }
+
+  // 1-Second Counter-Attack Timer Progress Bar
+  const fill = document.getElementById('progressFill');
+  const phaseTxt = document.getElementById('recPhaseText');
+  if (latest.pulse_active) {
+    const elapsed = latest.elapsed_ms;
+    const pct = Math.min(100, (elapsed / 1000.0) * 100);
+    fill.style.width = pct + '%';
+    
+    if (elapsed < 150) {
+      phaseTxt.innerText = `[${elapsed.toFixed(0)}ms] 🔴 THREAT DETECTED ON WIRE`;
+      phaseTxt.style.color = 'var(--rd)';
+    } else if (elapsed < 650) {
+      phaseTxt.innerText = `[${elapsed.toFixed(0)}ms] ⚡ ACTIVE COUNTER-ATTACK LAUNCHED (SSR RELAY TRIPPED)`;
+      phaseTxt.style.color = 'var(--ye)';
+    } else {
+      phaseTxt.innerText = `[${elapsed.toFixed(0)}ms] 🟡 TPM GOLDEN IMAGE RE-VERIFYING...`;
+      phaseTxt.style.color = 'var(--cy)';
+    }
+  } else {
+    fill.style.width = '100%';
+    phaseTxt.innerText = `✓ CLOSED-LOOP SAFE (<1.0s AUTO-RECOVERED)`;
+    phaseTxt.style.color = 'var(--gn)';
+  }
+
+  // Decision Tree Nodes
+  const nodes = latest.decision_nodes || {};
+  for (let n in nodes) {
+    const box = document.getElementById(n.toLowerCase().replace('_', '-'));
+    const valEl = document.getElementById(n.toLowerCase().replace('node_', '').replace('_', '').substring(0, 3) + '1-val');
+    if (box) {
+      const val = nodes[n];
+      if (valEl) valEl.innerText = val;
+      if (val === 'PASS') box.className = 'node-box n-pass';
+      else box.className = 'node-box n-fail';
+    }
+  }
+
+  // Waterfall Table
+  const tbody = document.getElementById('waterfallBody');
+  const recentLogs = historyData.slice(-6).reverse();
+  tbody.innerHTML = recentLogs.map(pt => {
+    const isErr = pt.active_attacks.length > 0;
+    return `
+      <tr>
+        <td>${pt.t.toFixed(1)}s</td>
+        <td>#${pt.seq}</td>
+        <td><code style="color:var(--cy);">${pt.header_hex.substring(0, 16)}...</code></td>
+        <td><code style="color:var(--rd);">${pt.tag_hex}</code></td>
+        <td>${pt.latency_us.toFixed(1)} µs</td>
+        <td style="color:${isErr ? 'var(--ye)' : 'var(--gn)'}">${pt.counter_phase}</td>
+        <td style="color:${isErr ? 'var(--rd)' : 'var(--gn)'}">${isErr ? 'COUNTER-ATTACK ENGAGED' : 'NOMINAL SAFE'}</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+async function triggerPulseAttack(attackName) {
+  try {
+    const res = await fetch('/api/attack', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ attack: attackName })
+    });
+    const data = await res.json();
+    
+    // Log to terminal
+    const term = document.getElementById('hackTerminal');
+    const line = document.createElement('div');
+    line.className = 'term-line';
+    line.innerText = `[${new Date().toLocaleTimeString()}] EXPLOIT FIRED: ${attackName} -> Counter-Attack Triggered!`;
+    term.appendChild(line);
+    term.scrollTop = term.scrollHeight;
+
+    fetchTelemetry();
+  } catch (err) { console.error(err); }
+}
+
+// ==============================================================================
+// ANIMATED CANVAS RENDERERS (60 FPS SMOOTH RENDER)
+// ==============================================================================
+function renderWaveforms(latest) {
+  renderRadarCanvas();
+  renderVoltageCanvas(latest ? latest.waveform : []);
+  renderAltCanvas();
+}
+
+function renderRadarCanvas() {
+  const canvas = document.getElementById('radarCanvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width = canvas.clientWidth;
+  canvas.height = canvas.clientHeight;
+  const w = canvas.width; const h = canvas.height;
+  const cx = w/2; const cy = h/2; const r = Math.min(w, h)/2 - 10;
+
+  ctx.clearRect(0, 0, w, h);
+
+  // Radar Concentric Circles
+  ctx.strokeStyle = 'rgba(255, 34, 85, 0.2)';
+  ctx.lineWidth = 1;
+  for (let i = 1; i <= 3; i++) {
+    ctx.beginPath(); ctx.arc(cx, cy, (r/3)*i, 0, Math.PI*2); ctx.stroke();
+  }
+
+  // Crosshairs
+  ctx.beginPath(); ctx.moveTo(cx - r, cy); ctx.lineTo(cx + r, cy); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx, cy - r); ctx.lineTo(cx, cy + r); ctx.stroke();
+
+  // Radar Sweeping Line
+  radarAngle += 0.05;
+  ctx.strokeStyle = '#ff2255';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  ctx.lineTo(cx + Math.cos(radarAngle)*r, cy + Math.sin(radarAngle)*r);
+  ctx.stroke();
+
+  // Target Dot (TAPAS UAV)
+  const targetX = cx + Math.cos(radarAngle - 0.5) * (r * 0.6);
+  const targetY = cy + Math.sin(radarAngle - 0.5) * (r * 0.6);
+  ctx.fillStyle = '#00ff88';
+  ctx.beginPath(); ctx.arc(targetX, targetY, 5, 0, Math.PI*2); ctx.fill();
+  ctx.strokeStyle = '#00ff88';
+  ctx.beginPath(); ctx.arc(targetX, targetY, 10, 0, Math.PI*2); ctx.stroke();
+}
+
+function renderVoltageCanvas(waveform) {
+  const canvas = document.getElementById('canvasVoltage');
+  const ctx = canvas.getContext('2d');
+  canvas.width = canvas.clientWidth; canvas.height = canvas.clientHeight;
+  const w = canvas.width; const h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
+
+  if (!waveform || waveform.length === 0) return;
+
+  // Zero Line
+  ctx.strokeStyle = '#141c2b';
+  ctx.beginPath(); ctx.moveTo(0, h/2); ctx.lineTo(w, h/2); ctx.stroke();
+
+  const getVy = (v) => h/2 - (v / 18.0) * (h/2 - 10);
+  ctx.strokeStyle = activeAttacks['VOLTAGE_FAULT'] ? '#ff2255' : '#00ff88';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  waveform.forEach((v, i) => {
+    const x = (i / (waveform.length - 1)) * w;
+    const y = getVy(v);
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+}
+
+function renderAltCanvas() {
+  const canvas = document.getElementById('canvasAlt');
+  const ctx = canvas.getContext('2d');
+  canvas.width = canvas.clientWidth; canvas.height = canvas.clientHeight;
+  const w = canvas.width; const h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
+
+  if (historyData.length < 2) return;
+
+  const minAlt = 3600; const maxAlt = 4600;
+  const getY = (alt) => h - ((alt - minAlt) / (maxAlt - minAlt)) * h;
+
+  // Digital Twin Curve (Cyan)
+  ctx.strokeStyle = '#00e5ff';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  historyData.forEach((pt, i) => {
+    const x = (i / (historyData.length - 1)) * w;
+    const y = getY(pt.twin_alt);
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+
+  // Sensor Alt Curve (Green or Red if spoofed)
+  ctx.strokeStyle = activeAttacks['GPS_DRIFT'] ? '#ff2255' : '#00ff88';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  historyData.forEach((pt, i) => {
+    const x = (i / (historyData.length - 1)) * w;
+    const y = getY(pt.sensor_alt);
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+}
+
+setInterval(fetchTelemetry, 50);  // High frequency 20 Hz updates
+fetchTelemetry();
+</script>
+</body>
+</html>

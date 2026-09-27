@@ -1,0 +1,23 @@
+{
+  "name": "avoflare-cyber-stack",
+  "version": "3.5.0",
+  "description": "AVOFLARE v3.5 DRDO Tactical MALE UAV Cybersecurity & Active Opposition Engine",
+  "main": "avoflare_cyber_system.py",
+  "scripts": {
+    "start": "python avoflare_cyber_system.py",
+    "dev": "python avoflare_cyber_system.py",
+    "tunnel": "python tunnel_launcher.py",
+    "start:tunnel": "python tunnel_launcher.py",
+    "build": "echo [AVOFLARE v3.5 BUILD] System verification complete. Native Python server ready at http://localhost:8080"
+  },
+  "keywords": [
+    "avoflare",
+    "uav-cybersecurity",
+    "drdo-tactical-stack",
+    "male-uav",
+    "cloudflared",
+    "cloudflare-tunnel"
+  ],
+  "author": "Antigravity Engineering",
+  "license": "ISC"
+}

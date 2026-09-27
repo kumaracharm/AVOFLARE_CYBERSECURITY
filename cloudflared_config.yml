@@ -1,0 +1,21 @@
+# ==============================================================================
+# AVOFLARE v3.5 — CLOUDFLARED INGRESS TUNNEL CONFIGURATION
+# Configured for routing public HTTPS traffic to the AVOFLARE Local Server (Port 8080)
+# ==============================================================================
+
+# Replace with your Cloudflare Tunnel UUID if using named tunnels:
+# tunnel: 00000000-0000-0000-0000-000000000000
+# credentials-file: C:\Users\youruser\.cloudflared\00000000-0000-0000-0000-000000000000.json
+
+ingress:
+  # Route public HTTPS traffic to local AVOFLARE Server
+  - hostname: uav-gcs.yourdomain.com
+    service: http://localhost:8000
+    originRequest:
+      connectTimeout: 30s
+      noTLSVerify: true
+      tcpKeepAlive: 30s
+      keepAliveConnections: 100
+
+  # Default fallback rule for unmatched hosts
+  - service: http_status:404

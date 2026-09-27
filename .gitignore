@@ -1,0 +1,22 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C/C++ Build directories & binaries
+build/
+*.exe
+*.o
+*.obj
+*.so
+*.dylib
+*.dll
+cdsg
+
+# Cloudflared binary
+cloudflared.exe
+
+# IDE / System
+.vscode/
+.idea/
+.DS_Store
